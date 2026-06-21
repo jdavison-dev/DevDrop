@@ -1,0 +1,36 @@
+We do not want to run the heavy file data through our own backend server. That would cost a fortune in server bandwidth.
+
+[ Frontend Client ] 
+       │
+       │ 1. "Hey Backend, I want to upload a 5MB log file."
+       ▼
+ [ Backend API ] ─── 2. Asks AWS S3 for a secure, temporary upload link ───► [ AWS S3 Bucket ]
+       │                                                                            │
+       ◄─── 3. Returns unique upload URL and a safe file ID ────────────────────────┘
+       │
+[ Frontend Client ]
+       │
+       │ 4. Uploads the file DIRECTLY to AWS S3 using that temporary URL
+       ▼
+ [ AWS S3 Bucket ] (File securely stored!)
+
+ With this system, the backend just handles the strings (metadata) and AWS handles the rest.
+
+ # 2. The Database Schema
+Since we are tracking files, download limits, and expirations, our database needs a robust structure. We will use a Files Collection/Table.
+
+Here is the idea for the database of what is required:
+
+id              string / UUID	The unique primary key for the file record.
+
+s3Key           string	    The actual filename/path stored inside the AWS S3 bucket.
+
+originalName    string	    The actual name of the file (e.g., server_logs.txt).
+
+downloadLimit   Integer	    Max downloads allowed (e.g., 1 for single-view, or 0 for unlimited).
+
+downloadCount   Integer	    Tracks how many times it has been downloaded. Starts at 0.
+
+expiresAt	    DateTime	The exact timestamp when this file must be deleted.
+
+createdAt	    DateTime	Timestamp of when the upload occurred.
