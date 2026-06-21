@@ -16,6 +16,7 @@ We do not want to run the heavy file data through our own backend server. That w
 
  With this system, the backend just handles the strings (metadata) and AWS handles the rest.
 
+
  # 2. The Database Schema
 Since we are tracking files, download limits, and expirations, our database needs a robust structure. We will use a Files Collection/Table.
 
