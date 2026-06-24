@@ -8,6 +8,17 @@ const PORT = process.env.PORT || 5000;
 // Middleware to parse incoming JSON stuff
 app.use(express.json());
 
+// Import route Files
+const fileRoutes = require('./routes/files');
+
+// Mount API routes
+app.use('/api/files', fileRoutes); //  prefixes all routes inside files.js with /api/files
+
+// Base sanity check route, should work
+app.get('/', (req, res) => {
+  res.json({ message: 'Welcome to the DevDrop API!' });
+});
+
 // connection to MongoDB Atlas
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('🚀 Successfully connected to MongoDB Atlas'))

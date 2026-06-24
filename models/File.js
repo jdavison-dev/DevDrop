@@ -34,4 +34,4 @@ FileSchema.virtual('isExpired').get(function() {
   return isTimeExpired || isLimitReached;
 });
 
-model.exports = mongoose('File', FileSchema);
+module.exports = mongoose.model('File', FileSchema);
