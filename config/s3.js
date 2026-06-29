@@ -1,4 +1,4 @@
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { v4: uuidv4 } = require('uuid');
 
@@ -33,4 +33,20 @@ const generateUploadUrl = async (originalName) => {
   return { uploadUrl, s3Key };
 };
 
-module.exports = { s3Client, generateUploadUrl };
+/**
+ * Generates a temporary, secure URL allowing a client to DOWNLOAD a file from S3
+ * @param {string} s3Key - The unique key of the file in the S3 bucket
+ * @returns {Promise<string>} - The signed download URL expiring in 5 minutes
+ */
+const generateDownloadUrl = async (s3Key) => {
+  const command = new GetObjectCommand({
+    Bucket: process.env.AWS_BUCKET_NAME,
+    Key: s3Key,
+  });
+
+  // Expire the link itself in 5 minutes (300 seconds) for tight security
+  const downloadUrl = await getSignedUrl(s3Client, command, { expiresIn: 300 });
+  return downloadUrl;
+};
+
+module.exports = { s3Client, generateUploadUrl, generateDownloadUrl };

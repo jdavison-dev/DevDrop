@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { generateUploadUrl } = require('../config/s3');
+const { generateUploadUrl, generateDownloadUrl } = require('../config/s3');
 const File = require('../models/File');
 
 /**
@@ -33,6 +33,9 @@ router.post('/upload-url', async (req, res) => {
       expiresAt
     });
 
+    // 🔍 ADD THIS LOG HERE:
+    console.log("Database payload before saving:", newFile);
+
     await newFile.save();
 
     // 4. Return the upload URL and the MongoDB document data back to the client
@@ -46,6 +49,51 @@ router.post('/upload-url', async (req, res) => {
   } catch (error) {
     console.error('❌ Error handling upload metadata:', error);
     res.status(500).json({ error: 'Internal server error setting up upload.' });
+  }
+});
+
+/**
+ * @route   GET /api/files/download/:id
+ * @desc    Validate file lifecycle and return a secure S3 download URL
+ * @access  Public
+ */
+router.get('/download/:id', async (req, res) => {
+  try {
+    // 1. Find the file record in MongoDB
+    const file = await File.findById(req.params.id);
+
+    if (!file) {
+      return res.status(404).json({ error: 'File not found.' });
+    }
+
+    // 2. Enforce the life & expiration security check
+    if (file.isExpired) {
+      return res.status(410).json({ 
+        error: 'This link has expired or reached its maximum download limit.' 
+      });
+    }
+
+    // 3. Increment the download count in the database
+    file.downloadCount += 1;
+    await file.save();
+
+    // 4. Generate the secure, temporary S3 download link
+    const downloadUrl = await generateDownloadUrl(file.s3Key);
+
+    // 5. Send back the link and metadata
+    res.status(200).json({
+      downloadUrl,
+      originalName: file.originalName,
+      remainingDownloads: file.downloadLimit > 0 ? (file.downloadLimit - file.downloadCount) : 'unlimited'
+    });
+
+  } catch (error) {
+    console.error('❌ Error processing file download:', error);
+    // Handle invalid MongoDB Object IDs well
+    if (error.kind === 'ObjectId') {
+      return res.status(404).json({ error: 'File not found.' });
+    }
+    res.status(500).json({ error: 'Internal server error processing download.' });
   }
 });
 
