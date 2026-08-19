@@ -1,12 +1,11 @@
 # DevDrop 💧
 > **Ephemeral, zero-trust cloud file sharing for developers.**
 
-[![DevDrop CI](https://github.com/jdavison-dev/DevDrop/actions/workflows/ci.yml/badge.svg)](https://github.com/jdavison-dev/DevDrop/actions)
 ![Node.js](https://img.shields.io/badge/Node.js-18+-green)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black)
 ![AWS S3](https://img.shields.io/badge/AWS-S3_Presigned_URLs-orange)
 
-<p center="align">
+<p align="center">
   <img src=".github/assets/devdrop_demo.gif" alt="DevDrop Demo" width="100%" />
 </p>
 
