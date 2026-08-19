@@ -38,15 +38,14 @@ const generateUploadUrl = async (originalName) => {
  * @param {string} s3Key - The unique key of the file in the S3 bucket
  * @returns {Promise<string>} - The signed download URL expiring in 5 minutes
  */
-const generateDownloadUrl = async (s3Key) => {
+const generateDownloadUrl = async (s3Key, originalName) => {
   const command = new GetObjectCommand({
     Bucket: process.env.AWS_BUCKET_NAME,
     Key: s3Key,
+    ResponseContentDisposition: `attachment; filename="${originalName || 'download'}"`,
   });
 
-  // Expire the link itself in 5 minutes (300 seconds) for tight security
-  const downloadUrl = await getSignedUrl(s3Client, command, { expiresIn: 300 });
-  return downloadUrl;
+  return await getSignedUrl(s3Client, command, { expiresIn: 300 });
 };
 
 module.exports = { s3Client, generateUploadUrl, generateDownloadUrl };

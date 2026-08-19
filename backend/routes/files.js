@@ -53,43 +53,67 @@ router.post('/upload-url', async (req, res) => {
 });
 
 /**
- * @route   GET /api/files/download/:id
- * @desc    Validate file lifecycle and return a secure S3 download URL
+ * @route   GET /api/files/metadata/:id
+ * @desc    Get file info for UI WITHOUT consuming a download
  * @access  Public
  */
-router.get('/download/:id', async (req, res) => {
+router.get('/metadata/:id', async (req, res) => {
   try {
-    // 1. Find the file record in MongoDB
     const file = await File.findById(req.params.id);
 
     if (!file) {
       return res.status(404).json({ error: 'File not found.' });
     }
 
-    // 2. Enforce the life & expiration security check
     if (file.isExpired) {
       return res.status(410).json({ 
         error: 'This link has expired or reached its maximum download limit.' 
       });
     }
 
-    // 3. Increment the download count in the database
-    file.downloadCount += 1;
-    await file.save();
-
-    // 4. Generate the secure, temporary S3 download link
-    const downloadUrl = await generateDownloadUrl(file.s3Key);
-
-    // 5. Send back the link and metadata
     res.status(200).json({
-      downloadUrl,
       originalName: file.originalName,
       remainingDownloads: file.downloadLimit > 0 ? (file.downloadLimit - file.downloadCount) : 'unlimited'
     });
+  } catch (error) {
+    console.error('❌ Error fetching metadata:', error);
+    if (error.kind === 'ObjectId') {
+      return res.status(404).json({ error: 'File not found.' });
+    }
+    res.status(500).json({ error: 'Internal server error fetching metadata.' });
+  }
+});
+
+/**
+ * @route   GET /api/files/download/:id
+ * @desc    Generate S3 link AND consume 1 download count
+ * @access  Public
+ */
+router.get('/download/:id', async (req, res) => {
+  try {
+    const file = await File.findById(req.params.id);
+
+    if (!file) {
+      return res.status(404).json({ error: 'File not found.' });
+    }
+
+    if (file.isExpired) {
+      return res.status(410).json({ 
+        error: 'This link has expired or reached its maximum download limit.' 
+      });
+    }
+
+    // 1. Generate the download link FIRST
+    const downloadUrl = await generateDownloadUrl(file.s3Key, file.originalName);
+
+    // 2. Increment count ONLY when the user actually requests the file download
+    file.downloadCount += 1;
+    await file.save();
+
+    res.status(200).json({ downloadUrl });
 
   } catch (error) {
     console.error('❌ Error processing file download:', error);
-    // Handle invalid MongoDB Object IDs well
     if (error.kind === 'ObjectId') {
       return res.status(404).json({ error: 'File not found.' });
     }

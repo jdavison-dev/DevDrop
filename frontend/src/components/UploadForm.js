@@ -82,7 +82,7 @@ export default function UploadForm() {
       if (!s3Res.ok) throw new Error('Failed to stream file payload directly to cloud storage.');
 
       // 3. Construct the clean public download link that handles lifecycle checks
-      const shareableLink = `http://localhost:5000/api/files/download/${fileId}`;
+      const shareableLink = `http://localhost:3000/download/${fileId}`;
       setGeneratedLink(shareableLink);
       setStatus('success');
 
