@@ -1,4 +1,4 @@
-name: Node.js CI
+name: DevDrop CI
 
 on:
   push:
@@ -11,20 +11,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
 
-    - name: Install dependencies
-      run: npm ci
+      - name: Install dependencies
+        run: |
+          cd backend && npm ci
+          cd ../frontend && npm ci
 
-    #  will uncomment these lines once I write the linter and tests!
-    # - name: Run Linter
-    #   run: npm run lint
-    # - name: Run Tests
-    #   run: npm test
+      - name: Build Next.js Frontend
+        run: |
+          cd frontend && npm run build
